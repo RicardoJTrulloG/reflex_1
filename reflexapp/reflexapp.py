@@ -1,8 +1,8 @@
 """Welcome to Reflex! This file outlines the steps to create a basic app."""
 
 import reflex as rx
-
 from rxconfig import config
+from collections import Counter
 
 class User(rx.Base):
     name: str
@@ -23,9 +23,35 @@ class State(rx.State):
             gender="female"
         ),
     ]
+    user_for_graph: list[dict] = []
 
     def add_user(self, form_data: dict):
         self.user.append(User(**form_data))
+        self.transform_data()
+
+    def transform_data(self):
+        gender_counts = Counter(
+            user.gender for user in self.user
+        )
+
+        self.user_for_graph = [
+            {"name": gender_group, "value": count}
+            for gender_group, count in gender_counts.items()
+        ]
+
+def graph():
+    return rx.recharts.bar_chart(
+        rx.recharts.bar(
+            data_key="value",
+            stroke=rx.color("accent", 9),
+            fill=rx.color("accent",8)
+        ),
+        rx.recharts.x_axis(data_key="name"),
+        rx.recharts.y_axis(),
+        data=State.user_for_graph,
+        width="100%",
+        height=250,
+    )
 
 def showUser(user: User):
     return rx.table.row(
@@ -110,6 +136,7 @@ def index() -> rx.Component:
             variant = "surface",
             size = "3",
         ),
+        graph(),
         justify="center",
         align="center",
     )
