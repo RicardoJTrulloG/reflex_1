@@ -3,6 +3,7 @@
 import reflex as rx
 from rxconfig import config
 from collections import Counter
+from .db import connect_db
 
 class User(rx.Base):
     name: str
@@ -11,22 +12,18 @@ class User(rx.Base):
 
 class State(rx.State):
     """The app state."""
-    user: list[User] = [
-        User(
-            name="Ricardo",
-            email="ricardp@test.com",
-            gender="male"
-        ),
-        User(
-            name="Laura",
-            email="laura@test.com",
-            gender="female"
-        ),
-    ]
+    user: list[User] = []
     user_for_graph: list[dict] = []
 
     def add_user(self, form_data: dict):
         self.user.append(User(**form_data))
+        con = connect_db()
+        cur = con.cursor()
+        data = [(str(self.user[-1].name),str(self.user[-1].email),str(self.user[-1].gender))]
+        #print(data)
+        #cur.execute("""INSERT INTO usuarios VALUES ({self.user[-1].name},{self.user[-1].email},{self.user[-1].gender})""")
+        cur.executemany("INSERT INTO usuarios(?, ?, ?);",data)
+        con.commit()
         self.transform_data()
 
     def transform_data(self):
